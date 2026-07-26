@@ -15,7 +15,7 @@ async def on_ready():
     bot.add_view(EndSessionView())
     bot.add_view(ImageSettingsView())
     
-    await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.playing, name="Gemini & Groq AI 🤖 | !setup_panel"))
+    await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.playing, name="Gemini, Groq, Openrouter 🤖"))
     print(f'✅ Bot aktif & terhubung sebagai {bot.user.name}')
 
 @bot.command(name="setup_panel")
@@ -24,9 +24,9 @@ async def setup_panel(ctx):
     view = MainPanelControlView()
     await ctx.send(
         content=(
-            "🤖 **AI AUTOMATION PANEL (GEMINI + GROQ DUAL ENGINE)**\n"
+            "🤖 **AI AUTOMATION PANEL (GEMINI + GROQ + OPENROUTER)**\n"
             "Pilih layanan AI yang ingin Anda gunakan di bawah ini:\n"
-            "• **💬 Chat AI (Teks):** Bebas pilih Gemini / Groq (Llama 3.3, DeepSeek R1).\n"
+            "• **💬 Chat AI (Teks):** Bebas pilih Gemini / Groq / Openrouter).\n"
             "• **🎨 Generate Gambar AI:** Atur Gaya & Ukuran Gambar privat."
         ),
         view=view

@@ -5,40 +5,34 @@ load_dotenv()
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY") # <-- Tambahan OpenRouter
 DISCORD_BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN")
 
 # 🎭 DAFTAR PILIHAN MESIN & MODEL AI
 AI_MODELS = {
     "gemini_flash": {
-        "name": "♊ Gemini Flash",
+        "name": "♊ Gemini Flash (Google)",
         "engine": "gemini",
         "model_id": "gemini-flash-latest",
         "system_prompt": "Kamu adalah AI Assistant Gemini yang ramah, cerdas, dan membantu di server ini. Jawablah dengan bahasa Indonesia yang santai, sopan, dan jelas."
     },
     "groq_llama70b": {
-        "name": "🦙 Groq - Llama 3.3 70B",
+        "name": "🦙 Groq - Llama 3.3 70B (Cerdas & Logika)",
         "engine": "groq",
         "model_id": "llama-3.3-70b-versatile",
-        "system_prompt": "Kamu adalah Llama 3.3 70B yang dijalankan oleh chip super cepat Groq LPU. Kamu sangat cerdas, responsif, dan membantu di server ini. Jawablah dengan bahasa Indonesia yang ramah dan akurat."
+        "system_prompt": "Kamu adalah Llama 3.3 70B yang dijalankan oleh chip super cepat Groq LPU. Kamu sangat cerdas, responsif, unggul dalam penalaran logika, pemecahan masalah, dan matematika. Jawablah dengan bahasa Indonesia yang ramah, akurat, dan terstruktur."
     },
-    "groq_deepseek": {
-        "name": "🧠 Groq - Llama 3.3 70B (Logika)",
-        "engine": "groq",
-        "model_id": "llama-3.3-70b-versatile", # <-- Diganti ke model Llama 3.3 70B yang aktif
-        "system_prompt": "Kamu adalah AI yang sangat cerdas. Kamu sangat unggul dalam penalaran logika, pemecahan masalah, dan matematika. Berikan jawaban yang terstruktur dan jelas dalam bahasa Indonesia."
-    },
-
     "groq_fast": {
         "name": "⚡ Groq - Llama 3.1 Instant",
         "engine": "groq",
         "model_id": "llama-3.1-8b-instant",
         "system_prompt": "Kamu adalah AI ultra-cepat berkecepatan tinggi. Jawablah dengan ringkas, padat, dan ramah dalam bahasa Indonesia."
     },
-    "groq_coding": {
-        "name": "🧑‍💻 Groq - Tutor Coding",
-        "engine": "groq",
-        "model_id": "llama-3.3-70b-versatile",
-        "system_prompt": "Kamu adalah Senior Software Engineer & Tutor Coding. Jawablah pertanyaan pemrograman secara terstruktur, jelaskan logikanya, dan berikan contoh kode yang bersih dan aman."
+    "qwen_coder": {
+        "name": "💻 OpenRouter AI (Koding & Umum)",
+        "engine": "openrouter",
+        "model_id": "openrouter/free",
+        "system_prompt": "Kamu adalah AI spesialis koding & software engineering terbaik. Jawablah pertanyaan pemrograman secara terstruktur, berikan contoh kode yang bersih, dan jelaskan logikanya dalam bahasa Indonesia."
     },
     "gemini_curhat": {
         "name": "🛋️ Gemini - Teman Curhat",

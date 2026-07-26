@@ -1,53 +1,94 @@
 from google import genai
 from google.genai import types
 from groq import Groq
+from openai import OpenAI
 import aiohttp
 import urllib.parse
 import io
 import discord
 from config import (
-    GEMINI_API_KEY, GROQ_API_KEY, AI_MODELS, 
+    GEMINI_API_KEY, GROQ_API_KEY, OPENROUTER_API_KEY, AI_MODELS, 
     STYLE_PROMPTS, RATIO_DIMENSIONS, 
     thread_chats, image_thread_settings
 )
 
-# Klien AI
+# Klien AI (Gemini, Groq, & OpenRouter)
 gemini_client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
 groq_client = Groq(api_key=GROQ_API_KEY) if GROQ_API_KEY else None
+openrouter_client = OpenAI(
+    base_url="https://openrouter.ai/api/v1",
+    api_key=OPENROUTER_API_KEY
+) if OPENROUTER_API_KEY else None
 
 def init_thread_session(thread_id: int, model_key: str):
-    """Menginisialisasi sesi obrolan (Gemini atau Groq)"""
+    """Menginisialisasi sesi obrolan (Gemini, Groq, atau OpenRouter)"""
     model_info = AI_MODELS.get(model_key, AI_MODELS["gemini_flash"])
     engine = model_info["engine"]
 
-    if engine == "gemini":
+    if engine == "gemini" and gemini_client:
         session = gemini_client.chats.create(
             model=model_info["model_id"],
             config=types.GenerateContentConfig(system_instruction=model_info["system_prompt"])
         )
         thread_chats[thread_id] = {"engine": "gemini", "info": model_info, "session": session}
-    elif engine == "groq":
+    
+    elif engine == "openrouter":
+        history = [{"role": "system", "content": model_info["system_prompt"]}]
+        thread_chats[thread_id] = {"engine": "openrouter", "info": model_info, "history": history}
+
+    else:
+        # Default / Fallback ke Groq
         history = [{"role": "system", "content": model_info["system_prompt"]}]
         thread_chats[thread_id] = {"engine": "groq", "info": model_info, "history": history}
     
     return thread_chats[thread_id]
 
 def get_ai_response(thread_id: int, prompt: str) -> str:
-    """Mendapatkan balasan dari Gemini atau Groq"""
+    """Mendapatkan balasan dari Gemini, Groq, atau OpenRouter"""
     session_data = thread_chats.get(thread_id)
     if not session_data:
         session_data = init_thread_session(thread_id, "gemini_flash")
 
     engine = session_data["engine"]
 
+    # 1. JIKA MESIN GEMINI
     if engine == "gemini":
-        response = session_data["session"].send_message(prompt)
-        return response.text
+        try:
+            response = session_data["session"].send_message(prompt)
+            return response.text
+        except Exception as e:
+            # AUTO-FALLBACK KE GROQ JIKA GEMINI ERROR
+            print(f"⚠️ Gemini Error ({e}). Otomatis mengalihkan ke Groq Llama 3.3...")
+            completion = groq_client.chat.completions.create(
+                model="llama-3.3-70b-versatile",
+                messages=[
+                    {"role": "system", "content": session_data["info"]["system_prompt"]},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.7,
+                max_tokens=2048,
+            )
+            return completion.choices[0].message.content
 
+    # 2. JIKA MESIN GROQ
     elif engine == "groq":
         session_data["history"].append({"role": "user", "content": prompt})
 
         completion = groq_client.chat.completions.create(
+            model=session_data["info"]["model_id"],
+            messages=session_data["history"],
+            temperature=0.7,
+            max_tokens=2048,
+        )
+        reply_text = completion.choices[0].message.content
+        session_data["history"].append({"role": "assistant", "content": reply_text})
+        return reply_text
+
+    # 3. JIKA MESIN OPENROUTER (Qwen 2.5 Coder)
+    elif engine == "openrouter":
+        session_data["history"].append({"role": "user", "content": prompt})
+
+        completion = openrouter_client.chat.completions.create(
             model=session_data["info"]["model_id"],
             messages=session_data["history"],
             temperature=0.7,

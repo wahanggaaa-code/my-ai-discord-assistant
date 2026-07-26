@@ -97,11 +97,10 @@ class AIModelSelectView(discord.ui.View):
         placeholder="🧠 Pilih Mesin & Model AI...",
         options=[
             discord.SelectOption(label="Gemini Flash (Google)", value="gemini_flash", description="Asisten Umum Cerdas Multi-Topik", emoji="♊"),
-            discord.SelectOption(label="Groq - Llama 3.3 70B (Meta)", value="groq_llama70b", description="Model Terpandai Meta di Chip Groq", emoji="🦙"),
-            discord.SelectOption(label="Groq - DeepSeek R1", value="groq_deepseek", description="Pakar Logika & Penalaran", emoji="🧠"),
-            discord.SelectOption(label="Groq - Llama 3.1 Instant", value="groq_fast", description="Respon Kilat < 0.2 Detik", emoji="⚡"),
-            discord.SelectOption(label="Groq - Tutor Coding", value="groq_coding", description="Pakar Pemrograman", emoji="🧑‍💻"),
-            discord.SelectOption(label="Gemini - Teman Curhat", value="gemini_curhat", description="Empati Tinggi & Suportif", emoji="🛋️"),
+            discord.SelectOption(label="Groq - Llama 3.3 70B (Meta)", value="groq_llama70b", description="Model Terpandai Meta, Cerdas & Pakar Logika", emoji="🦙"),
+            discord.SelectOption(label="Groq - Llama 3.1 Instant", value="groq_fast", description="Respon Kilat Super Cepat < 0.2 Detik", emoji="⚡"),
+            discord.SelectOption(label="OpenRouter AI (Auto-Router)", value="qwen_coder", description="AI Spesialis Koding & Software Engineer", emoji="💻"),
+            discord.SelectOption(label="Gemini - Teman Curhat", value="gemini_curhat", description="Empati Tinggi, Pendengar Hangat & Suportif", emoji="🛋️"),
         ]
     )
     async def select_model(self, interaction: discord.Interaction, select: discord.ui.Select):
