@@ -75,25 +75,7 @@ async def on_message(message):
                 await msg.edit(content=f"⚠️ Error: {e}")
 
     await bot.process_commands(message)
-
-import threading
-from http.server import HTTPServer, BaseHTTPRequestHandler
-
-# Web Server Mini agar Render Web Service Free Tier ($0/bulan) Bisa Aktif
-class HealthCheckHandler(BaseHTTPRequestHandler):
-    def do_GET(self):
-        self.send_response(200)
-        self.end_headers()
-        self.wfile.write(b"Bot is online and healthy!")
-
-def run_web_server():
-    port = int(os.getenv("PORT", 8080))
-    server = HTTPServer(("0.0.0.0", port), HealthCheckHandler)
-    server.serve_forever()
-
-# Jalankan Web Server di latar belakang
-threading.Thread(target=run_web_server, daemon=True).start()
-
+    
 # JALANKAN BOT
 if __name__ == "__main__":
     bot.run(DISCORD_BOT_TOKEN)
