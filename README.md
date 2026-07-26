@@ -1,4 +1,3 @@
-```markdown
 # 🤖 My AI Discord Assistant (Triple-Engine AI)
 
 **My AI Discord Assistant** adalah Bot Discord AI Multi-Engine modern yang menggabungkan 3 kekuatan AI raksasa sekaligus: **Google Gemini API**, **Groq LPU (Llama 3.3 70B & Llama 3.1 Instant)**, dan **OpenRouter AI Auto-Router**, serta generator gambar gratis dari **Pollinations AI**.
