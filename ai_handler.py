@@ -1,7 +1,3 @@
-from google import genai
-from google.genai import types
-from groq import Groq
-from openai import OpenAI
 import aiohttp
 import urllib.parse
 import io
@@ -12,21 +8,46 @@ from config import (
     thread_chats, image_thread_settings
 )
 
-# Klien AI (Gemini, Groq, & OpenRouter)
-gemini_client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
-groq_client = Groq(api_key=GROQ_API_KEY) if GROQ_API_KEY else None
-openrouter_client = OpenAI(
-    base_url="https://openrouter.ai/api/v1",
-    api_key=OPENROUTER_API_KEY
-) if OPENROUTER_API_KEY else None
+# Klien AI (Lazy Loading untuk Menghemat RAM agar tidak OOM)
+gemini_client = None
+groq_client = None
+openrouter_client = None
+
+def get_gemini_client():
+    global gemini_client
+    if gemini_client is None and GEMINI_API_KEY:
+        from google import genai
+        gemini_client = genai.Client(api_key=GEMINI_API_KEY)
+    return gemini_client
+
+def get_groq_client():
+    global groq_client
+    if groq_client is None and GROQ_API_KEY:
+        from groq import Groq
+        groq_client = Groq(api_key=GROQ_API_KEY)
+    return groq_client
+
+def get_openrouter_client():
+    global openrouter_client
+    if openrouter_client is None and OPENROUTER_API_KEY:
+        from openai import OpenAI
+        openrouter_client = OpenAI(
+            base_url="https://openrouter.ai/api/v1",
+            api_key=OPENROUTER_API_KEY
+        )
+    return openrouter_client
+
 
 def init_thread_session(thread_id: int, model_key: str):
     """Menginisialisasi sesi obrolan (Gemini, Groq, atau OpenRouter)"""
     model_info = AI_MODELS.get(model_key, AI_MODELS["gemini_flash"])
     engine = model_info["engine"]
 
-    if engine == "gemini" and gemini_client:
-        session = gemini_client.chats.create(
+    g_client = get_gemini_client()
+
+    if engine == "gemini" and g_client:
+        from google.genai import types
+        session = g_client.chats.create(
             model=model_info["model_id"],
             config=types.GenerateContentConfig(system_instruction=model_info["system_prompt"])
         )
@@ -57,9 +78,9 @@ def get_ai_response(thread_id: int, prompt: str) -> str:
             response = session_data["session"].send_message(prompt)
             return response.text
         except Exception as e:
-            # AUTO-FALLBACK KE GROQ JIKA GEMINI ERROR
             print(f"⚠️ Gemini Error ({e}). Otomatis mengalihkan ke Groq Llama 3.3...")
-            completion = groq_client.chat.completions.create(
+            gr_client = get_groq_client()
+            completion = gr_client.chat.completions.create(
                 model="llama-3.3-70b-versatile",
                 messages=[
                     {"role": "system", "content": session_data["info"]["system_prompt"]},
@@ -73,8 +94,9 @@ def get_ai_response(thread_id: int, prompt: str) -> str:
     # 2. JIKA MESIN GROQ
     elif engine == "groq":
         session_data["history"].append({"role": "user", "content": prompt})
+        gr_client = get_groq_client()
 
-        completion = groq_client.chat.completions.create(
+        completion = gr_client.chat.completions.create(
             model=session_data["info"]["model_id"],
             messages=session_data["history"],
             temperature=0.7,
@@ -84,11 +106,12 @@ def get_ai_response(thread_id: int, prompt: str) -> str:
         session_data["history"].append({"role": "assistant", "content": reply_text})
         return reply_text
 
-    # 3. JIKA MESIN OPENROUTER (Qwen 2.5 Coder)
+    # 3. JIKA MESIN OPENROUTER
     elif engine == "openrouter":
         session_data["history"].append({"role": "user", "content": prompt})
+        or_client = get_openrouter_client()
 
-        completion = openrouter_client.chat.completions.create(
+        completion = or_client.chat.completions.create(
             model=session_data["info"]["model_id"],
             messages=session_data["history"],
             temperature=0.7,
