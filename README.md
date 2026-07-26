@@ -102,4 +102,3 @@ Bot akan memunculkan **AI Automation Panel** interaktif!
 Proyek ini bersifat **Open Source**. Silakan lakukan *Fork*, beri *Star* 🌟, atau modifikasi sesuai kebutuhan server Anda!
 
 Dibuat dengan ❤️ oleh **[wahanggaaa](https://github.com/wahanggaaa-code)**.
-```
