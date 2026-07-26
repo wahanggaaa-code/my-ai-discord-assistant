@@ -37,7 +37,7 @@ my-ai-discord-assistant/
 
 ## 🔑 Kunci API & Lingkungan (`.env`)
 
-Buat file bernama `.env` di dalam folder proyek Anda, lalu isikan kunci rahasia Anda:
+Buat file bernama `.env` di dalam folder proyek Anda, lalu isikan **API KEY** Anda:
 
 ```env
 GEMINI_API_KEY=masukkan_gemini_api_key_anda
