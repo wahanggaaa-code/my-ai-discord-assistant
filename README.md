@@ -10,7 +10,7 @@ Bot ini menggunakan sistem **Automation Panel (Private Threads)** sehingga setia
 
 * ♊ **Google Gemini API:** Mendukung model *Gemini Flash* untuk tanya-jawab umum & mode *Teman Curhat* yang empatetik.
 * 🦙 **Groq LPU (Ultra-Fast Inference):** Pemrosesan super kilat (< 0.2 detik) menggunakan model *Llama 3.3 70B* (Cerdas & Logika) dan *Llama 3.1 Instant*.
-* 💻 **OpenRouter AI Integration:** Menggunakan *Auto-Router* pintar (`openrouter/free`) yang selalu terhubung ke model AI gratisan terbaru dan terbaik di dunia.
+* 💻 **OpenRouter AI Integration:** Menggunakan *Auto-Router* pintar (`openrouter/free`) yang selalu terhubung ke model AI gratisan terbaru dan terbaik.
 * 🎨 **AI Image Generator (Pollinations AI):** Hasilkan gambar/artwork gratis tanpa limit dengan pilihan **Style Art** (*Anime*, *Cyberpunk*, *Photorealistic*, *3D Render*) dan **Aspect Ratio** (*1:1*, *16:9*, *9:16*).
 * 🔒 **Sistem Ruang Privat Otomatis (Private Threads):** Ruang chat khusus dibuat otomatis saat member menekan tombol di panel utama.
 * 📜 **Rekap Obrolan via DM:** Saat tombol **🔴 Akhiri Sesi** diklik, bot merangkum seluruh percakapan dan mengirimkannya secara rahasia ke DM pengguna sebelum menghapus ruang privat tersebut.
