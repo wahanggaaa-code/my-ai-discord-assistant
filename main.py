@@ -45,7 +45,7 @@ async def on_message(message):
 
         async with message.channel.typing():
             try:
-                reply_text = get_ai_response(message.channel.id, prompt)
+                reply_text = await get_ai_response(message.channel.id, prompt)
 
                 # PEMOTONG PESAN > 2000 KARAKTER
                 if len(reply_text) > 2000:

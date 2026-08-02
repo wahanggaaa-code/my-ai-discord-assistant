@@ -8,118 +8,97 @@ from config import (
     thread_chats, image_thread_settings
 )
 
-# Klien AI (Lazy Loading untuk Menghemat RAM agar tidak OOM)
-gemini_client = None
-groq_client = None
-openrouter_client = None
-
-def get_gemini_client():
-    global gemini_client
-    if gemini_client is None and GEMINI_API_KEY:
-        from google import genai
-        gemini_client = genai.Client(api_key=GEMINI_API_KEY)
-    return gemini_client
-
-def get_groq_client():
-    global groq_client
-    if groq_client is None and GROQ_API_KEY:
-        from groq import Groq
-        groq_client = Groq(api_key=GROQ_API_KEY)
-    return groq_client
-
-def get_openrouter_client():
-    global openrouter_client
-    if openrouter_client is None and OPENROUTER_API_KEY:
-        from openai import OpenAI
-        openrouter_client = OpenAI(
-            base_url="https://openrouter.ai/api/v1",
-            api_key=OPENROUTER_API_KEY
-        )
-    return openrouter_client
-
-
 def init_thread_session(thread_id: int, model_key: str):
-    """Menginisialisasi sesi obrolan (Gemini, Groq, atau OpenRouter)"""
+    """Menginisialisasi sesi obrolan"""
     model_info = AI_MODELS.get(model_key, AI_MODELS["gemini_flash"])
-    engine = model_info["engine"]
-
-    g_client = get_gemini_client()
-
-    if engine == "gemini" and g_client:
-        from google.genai import types
-        session = g_client.chats.create(
-            model=model_info["model_id"],
-            config=types.GenerateContentConfig(system_instruction=model_info["system_prompt"])
-        )
-        thread_chats[thread_id] = {"engine": "gemini", "info": model_info, "session": session}
+    history = [{"role": "system", "content": model_info["system_prompt"]}]
     
-    elif engine == "openrouter":
-        history = [{"role": "system", "content": model_info["system_prompt"]}]
-        thread_chats[thread_id] = {"engine": "openrouter", "info": model_info, "history": history}
-
-    else:
-        # Default / Fallback ke Groq
-        history = [{"role": "system", "content": model_info["system_prompt"]}]
-        thread_chats[thread_id] = {"engine": "groq", "info": model_info, "history": history}
-    
+    thread_chats[thread_id] = {
+        "info": model_info,
+        "history": history
+    }
     return thread_chats[thread_id]
 
-def get_ai_response(thread_id: int, prompt: str) -> str:
-    """Mendapatkan balasan dari Gemini, Groq, atau OpenRouter"""
+async def get_ai_response(thread_id: int, prompt: str) -> str:
+    """Mendapatkan balasan AI secara ultra-ringan via HTTP (Sangat Hemat RAM ~30MB)"""
     session_data = thread_chats.get(thread_id)
     if not session_data:
         session_data = init_thread_session(thread_id, "gemini_flash")
 
-    engine = session_data["engine"]
+    model_info = session_data["info"]
+    engine = model_info["engine"]
+    model_id = model_info["model_id"]
+    
+    session_data["history"].append({"role": "user", "content": prompt})
 
-    # 1. JIKA MESIN GEMINI
-    if engine == "gemini":
-        try:
-            response = session_data["session"].send_message(prompt)
-            return response.text
-        except Exception as e:
-            print(f"⚠️ Gemini Error ({e}). Otomatis mengalihkan ke Groq Llama 3.3...")
-            gr_client = get_groq_client()
-            completion = gr_client.chat.completions.create(
-                model="llama-3.3-70b-versatile",
-                messages=[
-                    {"role": "system", "content": session_data["info"]["system_prompt"]},
-                    {"role": "user", "content": prompt}
-                ],
-                temperature=0.7,
-                max_tokens=2048,
-            )
-            return completion.choices[0].message.content
+    async with aiohttp.ClientSession() as session:
+        # A. MESIN GEMINI
+        if engine == "gemini":
+            try:
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_id}:generateContent?key={GEMINI_API_KEY}"
+                
+                gemini_contents = []
+                for h in session_data["history"]:
+                    if h["role"] == "system": continue
+                    role = "user" if h["role"] == "user" else "model"
+                    gemini_contents.append({"role": role, "parts": [{"text": h["content"]}]})
 
-    # 2. JIKA MESIN GROQ
-    elif engine == "groq":
-        session_data["history"].append({"role": "user", "content": prompt})
-        gr_client = get_groq_client()
+                payload = {
+                    "system_instruction": {"parts": [{"text": model_info["system_prompt"]}]},
+                    "contents": gemini_contents
+                }
 
-        completion = gr_client.chat.completions.create(
-            model=session_data["info"]["model_id"],
-            messages=session_data["history"],
-            temperature=0.7,
-            max_tokens=2048,
-        )
-        reply_text = completion.choices[0].message.content
-        session_data["history"].append({"role": "assistant", "content": reply_text})
-        return reply_text
+                async with session.post(url, json=payload) as resp:
+                    data = await resp.json()
+                    if resp.status == 200 and "candidates" in data:
+                        reply = data["candidates"][0]["content"]["parts"][0]["text"]
+                        session_data["history"].append({"role": "assistant", "content": reply})
+                        return reply
+                    else:
+                        raise Exception(f"Gemini Error {resp.status}: {data}")
 
-    # 3. JIKA MESIN OPENROUTER
-    elif engine == "openrouter":
-        session_data["history"].append({"role": "user", "content": prompt})
-        or_client = get_openrouter_client()
+            except Exception as e:
+                print(f"⚠️ Gemini Error ({e}). Fallback ke Groq Llama 3.3...")
+                engine = "groq"
+                model_id = "llama-3.3-70b-versatile"
 
-        completion = or_client.chat.completions.create(
-            model=session_data["info"]["model_id"],
-            messages=session_data["history"],
-            temperature=0.7,
-            max_tokens=2048,
-        )
-        reply_text = completion.choices[0].message.content
-        session_data["history"].append({"role": "assistant", "content": reply_text})
-        return reply_text
+        # B. MESIN GROQ
+        if engine == "groq":
+            url = "https://api.groq.com/openai/v1/chat/completions"
+            headers = {"Authorization": f"Bearer {GROQ_API_KEY}"}
+            payload = {
+                "model": model_id,
+                "messages": session_data["history"],
+                "temperature": 0.7,
+                "max_tokens": 2048
+            }
+            async with session.post(url, headers=headers, json=payload) as resp:
+                data = await resp.json()
+                if resp.status == 200 and "choices" in data:
+                    reply = data["choices"][0]["message"]["content"]
+                    session_data["history"].append({"role": "assistant", "content": reply})
+                    return reply
+                else:
+                    return f"⚠️ Groq API Error ({resp.status}): {data}"
+
+        # C. MESIN OPENROUTER
+        elif engine == "openrouter":
+            url = "https://openrouter.ai/api/v1/chat/completions"
+            headers = {"Authorization": f"Bearer {OPENROUTER_API_KEY}"}
+            payload = {
+                "model": model_id,
+                "messages": session_data["history"],
+                "temperature": 0.7,
+                "max_tokens": 2048
+            }
+            async with session.post(url, headers=headers, json=payload) as resp:
+                data = await resp.json()
+                if resp.status == 200 and "choices" in data:
+                    reply = data["choices"][0]["message"]["content"]
+                    session_data["history"].append({"role": "assistant", "content": reply})
+                    return reply
+                else:
+                    return f"⚠️ OpenRouter Error ({resp.status}): {data}"
 
 async def generate_image(thread_id: int, prompt: str) -> tuple[str, discord.File]:
     """Menghasilkan gambar dari Pollinations AI"""

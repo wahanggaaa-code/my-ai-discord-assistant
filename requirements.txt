@@ -1,6 +1,3 @@
 discord.py
-google-genai
-groq
-openai
 python-dotenv
 aiohttp
